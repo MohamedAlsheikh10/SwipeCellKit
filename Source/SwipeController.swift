@@ -147,7 +147,7 @@ class SwipeController: NSObject {
             }
         case .ended, .cancelled, .failed:
             guard let actionsView = swipeable.actionsView, let actionsContainerView = self.actionsContainerView else { return }
-            if swipeable.state.isActive == false && swipeable.bounds.midX == target.center.x  {
+            if swipeable.state.isActive == false && swipeable.bounds.midX == target.center.x {
                 return
             }
             
@@ -155,22 +155,33 @@ class SwipeController: NSObject {
             
             if actionsView.expanded == true, let expandedAction = actionsView.expandableAction  {
                 perform(action: expandedAction)
+            } else if let expansionStyle = actionsView.options.expansionStyle {
+                switch expansionStyle.completionAnimation {
+                case .forceBounce:
+                    hideSwipe(animated: true)
+                case .bounce, .fill(_):
+                    continueExecution(swipeable: swipeable, actionsContainerView: actionsContainerView, actionsView: actionsView, forVelocity: velocity)
+                }
             } else {
-                let targetOffset = targetCenter(active: swipeable.state.isActive)
-                let distance = targetOffset - actionsContainerView.center.x
-                let normalizedVelocity = velocity.x * scrollRatio / distance
-                
-                animate(toOffset: targetOffset, withInitialVelocity: normalizedVelocity) { _ in
-                    if self.swipeable?.state == .center {
-                        self.reset()
-                    }
-                }
-                
-                if !swipeable.state.isActive {
-                    delegate?.swipeController(self, didEndEditingSwipeableFor: actionsView.orientation)
-                }
+                continueExecution(swipeable: swipeable, actionsContainerView: actionsContainerView, actionsView: actionsView, forVelocity: velocity)
             }
         default: break
+        }
+    }
+    
+    func continueExecution(swipeable: UIView & Swipeable, actionsContainerView: UIView, actionsView: SwipeActionsView, forVelocity velocity: CGPoint) {
+        let targetOffset = targetCenter(active: swipeable.state.isActive)
+        let distance = targetOffset - actionsContainerView.center.x
+        let normalizedVelocity = velocity.x * scrollRatio / distance
+        
+        animate(toOffset: targetOffset, withInitialVelocity: normalizedVelocity) { _ in
+            if self.swipeable?.state == .center {
+                self.reset()
+            }
+        }
+        
+        if !swipeable.state.isActive {
+            delegate?.swipeController(self, didEndEditingSwipeableFor: actionsView.orientation)
         }
     }
     
@@ -291,7 +302,7 @@ class SwipeController: NSObject {
             actionsContainerView.center = CGPoint(x: targetOffset, y: actionsContainerView.center.y)
             swipeable.actionsView?.visibleWidth = abs(actionsContainerView.frame.minX)
             swipeable.layoutIfNeeded()
-        }        
+        }
     }
     
     func stopAnimatorIfNeeded() {
@@ -382,7 +393,7 @@ extension SwipeController: SwipeActionsViewDelegate {
             actionsView.setExpanded(expanded: true)
             
             switch expansionStyle.completionAnimation {
-            case .bounce:
+            case .forceBounce, .bounce:
                 perform(action: action, hide: true)
             case .fill(let fillOption):
                 performFillAction(action: action, fillOption: fillOption)
@@ -391,6 +402,7 @@ extension SwipeController: SwipeActionsViewDelegate {
             perform(action: action, hide: action.hidesWhenSelected)
         }
     }
+
     
     func perform(action: SwipeAction, hide: Bool) {
         guard let indexPath = swipeable?.indexPath else { return }

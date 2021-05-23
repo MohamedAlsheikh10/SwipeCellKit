@@ -165,6 +165,9 @@ extension SwipeExpansionStyle {
         
         /// The expansion will bounce back from the trigger point and hide the action view, resetting the item.
         case bounce
+        
+        /// The expansion will bounce back and hide the action view, resetting the item.
+        case forceBounce
     }
     
     /// Specifies the options for the fill completion animation.
