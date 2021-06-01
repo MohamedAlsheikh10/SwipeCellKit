@@ -158,7 +158,7 @@ class SwipeController: NSObject {
             } else if let expansionStyle = actionsView.options.expansionStyle {
                 switch expansionStyle.completionAnimation {
                 case .forceBounce:
-                    hideSwipe(animated: true)
+                    hideSwipe(animated: true, forceBounce: true)
                 case .bounce, .fill(_):
                     continueExecution(swipeable: swipeable, actionsContainerView: actionsContainerView, actionsView: actionsView, forVelocity: velocity)
                 }
@@ -471,9 +471,11 @@ extension SwipeController: SwipeActionsViewDelegate {
         }
     }
     
-    func hideSwipe(animated: Bool, completion: ((Bool) -> Void)? = nil) {
+    func hideSwipe(animated: Bool, forceBounce: Bool = false, completion: ((Bool) -> Void)? = nil) {
         guard var swipeable = self.swipeable, let actionsContainerView = self.actionsContainerView else { return }
+        if !forceBounce {
         guard swipeable.state == .left || swipeable.state == .right else { return }
+        }
         guard let actionView = swipeable.actionsView else { return }
         
         swipeable.state = .animatingToCenter
